@@ -16,12 +16,34 @@ function setProgress(percent, ui) {
 
 function diagnosticarEntorno() {
   if (!('Notification' in window)) {
-    return { ok: false, reason: 'no-support', msg: 'Sin soporte de avisos' };
+    return {
+      ok: false,
+      reason: 'no-support',
+      msg: 'Sin soporte de avisos',
+      detail: 'Este navegador o visor no soporta la API Notification.'
+    };
   }
   if (!window.isSecureContext) {
-    return { ok: false, reason: 'insecure', msg: 'Usa localhost o HTTPS' };
+    return {
+      ok: false,
+      reason: 'insecure',
+      msg: 'Usa localhost o HTTPS',
+      detail: `El contexto no es seguro (${location.protocol}). Se requiere HTTPS o localhost.`
+    };
   }
-  return { ok: true, reason: 'ok', msg: 'Listo' };
+  return {
+    ok: true,
+    reason: 'ok',
+    msg: 'Listo',
+    detail: 'Entorno compatible.'
+  };
+}
+
+function mostrarAlertaFalloNotificacion(titulo, cuerpo, motivo) {
+  alert(
+    `${titulo}\n${cuerpo}\n\n` +
+    `Motivo por el que no llegó la notificación del sistema en PC:\n${motivo}`
+  );
 }
 
 async function pedirPermisoNotificaciones(btnNotify, ui) {
@@ -31,13 +53,14 @@ async function pedirPermisoNotificaciones(btnNotify, ui) {
     btnNotify.textContent = 'No soportado';
     btnNotify.disabled = true;
     ui.statusText.textContent = env.msg;
+    alert(`No se pueden activar avisos:\n${env.detail}`);
     return 'unsupported';
   }
 
   if (env.reason === 'insecure') {
     btnNotify.textContent = 'Usa localhost/HTTPS';
     ui.statusText.textContent = env.msg;
-    console.warn('Notification requiere localhost o HTTPS (no file://).');
+    alert(`No se pueden activar avisos:\n${env.detail}`);
     return 'insecure';
   }
 
@@ -49,7 +72,10 @@ async function pedirPermisoNotificaciones(btnNotify, ui) {
   if (Notification.permission === 'denied') {
     btnNotify.textContent = 'Bloqueado en sitio';
     ui.statusText.textContent = 'Permite en ajustes del sitio';
-    console.warn('Notificaciones bloqueadas en la configuración del sitio.');
+    alert(
+      'Las notificaciones están bloqueadas (denied) para este sitio.\n' +
+      'Ábrelas en los permisos del sitio/navegador y recarga.'
+    );
     return 'denied';
   }
 
@@ -60,20 +86,33 @@ async function pedirPermisoNotificaciones(btnNotify, ui) {
     } else if (permission === 'denied') {
       btnNotify.textContent = 'Bloqueado en sitio';
       ui.statusText.textContent = 'Permiso denegado';
+      alert('Denegaste el permiso de notificaciones en el navegador.');
     } else {
       btnNotify.textContent = 'Activar avisos';
+      alert('No se concedió el permiso de notificaciones (quedó pendiente/cerrado).');
     }
     return permission;
   } catch (err) {
     console.error('Error al solicitar permiso de notificación:', err);
     btnNotify.textContent = 'Error de permiso';
+    alert(`Error al solicitar permiso de notificación:\n${err?.message || err}`);
     return 'error';
   }
 }
 
 async function dispararNotificacionSO(titulo, cuerpo) {
   const env = diagnosticarEntorno();
-  if (!env.ok || Notification.permission !== 'granted') {
+  if (!env.ok) {
+    mostrarAlertaFalloNotificacion(titulo, cuerpo, env.detail);
+    return false;
+  }
+
+  if (Notification.permission !== 'granted') {
+    mostrarAlertaFalloNotificacion(
+      titulo,
+      cuerpo,
+      `El permiso actual es "${Notification.permission}". Pulsa "Activar avisos" para concederlo.`
+    );
     return false;
   }
 
@@ -104,6 +143,12 @@ async function dispararNotificacionSO(titulo, cuerpo) {
     return true;
   } catch (err) {
     console.warn('El sistema/navegador impidió mostrar la notificación externa:', err);
+    mostrarAlertaFalloNotificacion(
+      titulo,
+      cuerpo,
+      `El sistema o visor bloqueó o falló al crear la notificación:\n${err?.message || err}\n` +
+      '(Revisa también si el modo No molestar está activo o si falta el servicio de notificaciones del escritorio en Linux).'
+    );
     return false;
   }
 }
