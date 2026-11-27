@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Widget Hidratación</title>
+  <link rel="stylesheet" href="./estilos.css" />
+</head>
+<body>
+  <section class="hydration-widget" aria-label="Recordatorio de agua">
+    <header class="widget-header">
+      <span class="widget-title">Tomar agua</span>
+      <span class="widget-status" id="widgetPercent">0%</span>
+    </header>
+
+    <div class="water-stage">
+      <canvas id="waterCanvas"></canvas>
+    </div>
+
+    <div class="progress-wrapper">
+      <div class="progress-meta">
+        <span id="statusText">Listo para empezar</span>
+        <span id="progressLabel">0 / 100</span>
+      </div>
+      <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="progress-fill" id="progressBar"></div>
+      </div>
+    </div>
+
+    <div class="widget-actions">
+      <button type="button" class="widget-btn primary" id="btnStartReset">Empezar</button>
+      <button type="button" class="widget-btn" id="btnNotify">Activar avisos</button>
+    </div>
+  </section>
+
+  <script type="module" src="./script.js"></script>
+</body>
+</html>
