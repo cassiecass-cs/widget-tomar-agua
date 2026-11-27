@@ -1,6 +1,6 @@
 import { WaterCanvasFX } from './WaterCanvasFX.js';
 
-// 1 hora en milisegundos (60 min * 60 seg * 1000 ms)
+// 60_000 = 1 minuto (para probar) | 3_600_000 = 1 hora (uso real)
 const CYCLE_DURATION_MS = 60_000;
 const SOUND_SRC = './alerta.mp3';
 
@@ -30,11 +30,13 @@ async function pedirPermisoNotificaciones(btnNotify, ui) {
   if (env.reason === 'no-support') {
     btnNotify.textContent = 'No soportado';
     btnNotify.disabled = true;
+    ui.statusText.textContent = env.msg;
     return 'unsupported';
   }
 
   if (env.reason === 'insecure') {
     btnNotify.textContent = 'Usa localhost/HTTPS';
+    ui.statusText.textContent = env.msg;
     console.warn('Notification requiere localhost o HTTPS (no file://).');
     return 'insecure';
   }
@@ -46,6 +48,7 @@ async function pedirPermisoNotificaciones(btnNotify, ui) {
 
   if (Notification.permission === 'denied') {
     btnNotify.textContent = 'Bloqueado en sitio';
+    ui.statusText.textContent = 'Permite en ajustes del sitio';
     console.warn('Notificaciones bloqueadas en la configuración del sitio.');
     return 'denied';
   }
@@ -56,6 +59,7 @@ async function pedirPermisoNotificaciones(btnNotify, ui) {
       btnNotify.textContent = 'Avisos activos';
     } else if (permission === 'denied') {
       btnNotify.textContent = 'Bloqueado en sitio';
+      ui.statusText.textContent = 'Permiso denegado';
     } else {
       btnNotify.textContent = 'Activar avisos';
     }
@@ -159,7 +163,10 @@ function main() {
   let startTime = 0;
   let timerId = null;
 
-  if ('Notification' in window) {
+  const envInicial = diagnosticarEntorno();
+  if (!envInicial.ok) {
+    ui.statusText.textContent = envInicial.msg;
+  } else if ('Notification' in window) {
     if (Notification.permission === 'granted') {
       btnNotify.textContent = 'Avisos activos';
     } else if (Notification.permission === 'denied') {
@@ -185,7 +192,7 @@ function main() {
 
     const enviada = await dispararNotificacionSO(
       '¡Hora de tomar agua!',
-      'Pasó 1 hora. Toma un vaso de agua y pulsa Reiniciar.'
+      'Se completó el ciclo de 1 minuto. Toma un vaso de agua y pulsa Reiniciar.'
     );
     ui.statusText.textContent = enviada ? '¡Toma agua!' : '¡Toma agua! (aviso local)';
 
@@ -216,9 +223,10 @@ function main() {
       const ratio = elapsed / CYCLE_DURATION_MS;
       setProgress(ratio * 100, ui);
       waterFX.setLevel(ratio);
-    }, 250);
+    }, 200);
   }
 
+  // Estado inicial: no arranca automáticamente
   setProgress(0, ui);
   waterFX.setLevel(0);
   waterFX.start();
@@ -242,7 +250,7 @@ function main() {
     if (res === 'granted') {
       await dispararNotificacionSO(
         '¡Hora de tomar agua!',
-        'Avisos activados. Te avisaré cada hora cuando termine el ciclo.'
+        'Avisos activados. Te avisaré cuando termine el ciclo.'
       );
       await reproducirSonido(alertAudio);
     }
