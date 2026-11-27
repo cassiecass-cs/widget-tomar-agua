@@ -1,7 +1,7 @@
 import { WaterCanvasFX } from './WaterCanvasFX.js';
 
 // 1 hora en milisegundos (60 min * 60 seg * 1000 ms)
-const CYCLE_DURATION_MS = 3_600_000;
+const CYCLE_DURATION_MS = 60_000;
 const SOUND_SRC = './alerta.mp3';
 
 function setProgress(percent, ui) {
