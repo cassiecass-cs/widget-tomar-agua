@@ -1,7 +1,7 @@
 import { WaterCanvasFX } from './WaterCanvasFX.js';
 
-// 60_000 = 1 minuto (para probar) | 3_600_000 = 1 hora (uso real)
-const CYCLE_DURATION_MS = 60_000;
+// 1 hora en milisegundos (60 min * 60 seg * 1000 ms)
+const CYCLE_DURATION_MS = 3_600_000;
 const SOUND_SRC = './alerta.mp3';
 
 function setProgress(percent, ui) {
@@ -183,14 +183,12 @@ function main() {
     waterFX.setAnimation('drip');
     btnStartReset.textContent = 'Reiniciar';
 
-    // 1. Primero se lanza la notificación del sistema operativo
     const enviada = await dispararNotificacionSO(
       '¡Hora de tomar agua!',
-      'Se completó el ciclo. Toma un vaso de agua y pulsa Reiniciar.'
+      'Pasó 1 hora. Toma un vaso de agua y pulsa Reiniciar.'
     );
     ui.statusText.textContent = enviada ? '¡Toma agua!' : '¡Toma agua! (aviso local)';
 
-    // 2. Después se reproduce alerta.mp3
     await reproducirSonido(alertAudio);
   }
 
@@ -221,7 +219,6 @@ function main() {
     }, 250);
   }
 
-  // Estado inicial: no arranca automáticamente
   setProgress(0, ui);
   waterFX.setLevel(0);
   waterFX.start();
@@ -245,7 +242,7 @@ function main() {
     if (res === 'granted') {
       await dispararNotificacionSO(
         '¡Hora de tomar agua!',
-        'Avisos activados. Así te avisaré cuando termine el ciclo.'
+        'Avisos activados. Te avisaré cada hora cuando termine el ciclo.'
       );
       await reproducirSonido(alertAudio);
     }
